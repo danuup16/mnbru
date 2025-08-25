@@ -1,5 +1,22 @@
-local Show_Button = false
-local Button_Icon = ""
+--[[
+
+███████╗██╗░░░░░██╗░░░██╗███████╗███╗░░██╗████████╗  ██████╗░██╗░░░░░██╗░░░██╗░██████╗
+██╔════╝██║░░░░░██║░░░██║██╔════╝████╗░██║╚══██╔══╝  ██╔══██╗██║░░░░░██║░░░██║██╔════╝
+█████╗░░██║░░░░░██║░░░██║█████╗░░██╔██╗██║░░░██║░░░  ██████╔╝██║░░░░░██║░░░██║╚█████╗░
+██╔══╝░░██║░░░░░██║░░░██║██╔══╝░░██║╚████║░░░██║░░░  ██╔═══╝░██║░░░░░██║░░░██║░╚═══██╗
+██║░░░░░███████╗╚██████╔╝███████╗██║░╚███║░░░██║░░░  ██║░░░░░███████╗╚██████╔╝██████╔╝
+╚═╝░░░░░╚══════╝░╚═════╝░╚══════╝╚═╝░░╚══╝░░░╚═╝░░░  ╚═╝░░░░░╚══════╝░╚═════╝░╚═════╝░
+
+A modified version of Fluent
+github.com/discoart/FluentPlus | dsc.gg/hydrahub
+
+]]
+
+--- button
+local Show_Button = true
+local Button_Icon = "rbxassetid://125307367032337"
+---
+
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -57,7 +74,7 @@ local Themes = {
 	},
 	Dark = {
 		Name = "Dark",
-		Accent = Color3.fromRGB(219, 224, 226),
+		Accent = Color3.fromRGB(96, 205, 255),
 		AcrylicMain = Color3.fromRGB(60, 60, 60),
 		AcrylicBorder = Color3.fromRGB(90, 90, 90),
 		AcrylicGradient = ColorSequence.new(Color3.fromRGB(40, 40, 40), Color3.fromRGB(40, 40, 40)),
