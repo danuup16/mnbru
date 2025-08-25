@@ -1,0 +1,311 @@
+local Fluent = loadstring(game:HttpGet("https://raw.githubusercontent.com/danuup16/mnbru/refs/heads/main/mnu"))()
+local HttpService = game:GetService("HttpService")
+
+local AutoConfig = {} do
+    AutoConfig.FolderName = "DJSTest"
+    AutoConfig.ConfigFile = "DJS.json"
+    AutoConfig.Library = nil
+    AutoConfig.LastSaveTime = 0
+    AutoConfig.IsMonitoring = false
+    AutoConfig.Parsers = {
+        Toggle = {
+            Save = function(idx, option) 
+                return { type = "Toggle", idx = idx, value = option.Value } 
+            end,
+            Load = function(idx, data, options)
+                if options[idx] then 
+                    options[idx]:SetValue(data.value)
+                end
+            end,
+        },
+        Slider = {
+            Save = function(idx, option)
+                return { type = "Slider", idx = idx, value = tonumber(option.Value) }
+            end,
+            Load = function(idx, data, options)
+                if options[idx] then 
+                    options[idx]:SetValue(data.value)
+                end
+            end,
+        },
+        Dropdown = {
+            Save = function(idx, option)
+                return { type = "Dropdown", idx = idx, value = option.Value, multi = option.Multi }
+            end,
+            Load = function(idx, data, options)
+                if options[idx] then 
+                    options[idx]:SetValue(data.value)
+                end
+            end,
+        },
+        Colorpicker = {
+            Save = function(idx, option)
+                return { type = "Colorpicker", idx = idx, value = option.Value:ToHex(), transparency = option.Transparency }
+            end,
+            Load = function(idx, data, options)
+                if options[idx] then 
+                    options[idx]:SetValueRGB(Color3.fromHex(data.value), data.transparency)
+                end
+            end,
+        },
+        Input = {
+            Save = function(idx, option)
+                return { type = "Input", idx = idx, text = option.Value }
+            end,
+            Load = function(idx, data, options)
+                if options[idx] and type(data.text) == "string" then
+                    options[idx]:SetValue(data.text)
+                end
+            end,
+        },
+    }
+    
+    function AutoConfig:Initialize(library)
+        self.Library = library
+        self:CreateFolders()
+        wait(2) 
+        self:LoadConfig()
+        self:StartChangeMonitoring()
+    end
+    
+    function AutoConfig:CreateFolders()
+        if not isfolder(self.FolderName) then
+            makefolder(self.FolderName)
+        end
+    end
+    
+    function AutoConfig:GetFilePath()
+        return self.FolderName .. "/" .. self.ConfigFile
+    end
+    
+    function AutoConfig:SaveConfig()
+        local data = { objects = {} }
+        
+        for idx, option in pairs(self.Library.Options) do
+            local parser = self.Parsers[option.Type]
+            if parser then
+                table.insert(data.objects, parser.Save(idx, option))
+            end
+        end
+        
+        local success, encoded = pcall(HttpService.JSONEncode, HttpService, data)
+        if success then
+            writefile(self:GetFilePath(), encoded)
+            self.LastSaveTime = tick()
+            return true, "Config saved successfully"
+        else
+            return false, "Failed to encode config data"
+        end
+    end
+    
+    function AutoConfig:LoadConfig()
+        local filePath = self:GetFilePath()
+        
+        if not isfile(filePath) then
+            return false, "No config file found"
+        end
+        
+        local success, decoded = pcall(HttpService.JSONDecode, HttpService, readfile(filePath))
+        if not success then
+            return false, "Failed to decode config"
+        end
+        
+        for _, item in pairs(decoded.objects) do
+            local parser = self.Parsers[item.type]
+            if parser then
+                spawn(function()
+                    parser.Load(item.idx, item, self.Library.Options)
+                end)
+            end
+        end
+        return true, "Config loaded successfully"
+    end
+    
+    function AutoConfig:StartChangeMonitoring()
+        if self.IsMonitoring then return end
+        self.IsMonitoring = true
+        local lastValues = {}
+        for idx, option in pairs(self.Library.Options) do
+            lastValues[idx] = self:GetOptionValue(option)
+        end
+        
+        spawn(function()
+            while self.IsMonitoring do
+                wait(0.5)
+                
+                local hasChanges = false
+                for idx, option in pairs(self.Library.Options) do
+                    local currentValue = self:GetOptionValue(option)
+                    if self:ValuesAreDifferent(lastValues[idx], currentValue) then
+                        lastValues[idx] = currentValue
+                        hasChanges = true
+                    end
+                end
+                
+                if hasChanges then
+                    local success, msg = self:SaveConfig()
+                    if success then
+                    end
+                end
+            end
+        end)
+    end
+    
+    function AutoConfig:GetOptionValue(option)
+        if option.Type == "Toggle" then
+            return option.Value
+        elseif option.Type == "Slider" then
+            return option.Value
+        elseif option.Type == "Dropdown" then
+            return option.Value
+        elseif option.Type == "Input" then
+            return option.Value
+        elseif option.Type == "Colorpicker" then
+            return {option.Value:ToHex(), option.Transparency}
+        end
+        return nil
+    end
+    
+    function AutoConfig:ValuesAreDifferent(oldValue, newValue)
+        if type(oldValue) ~= type(newValue) then
+            return true
+        end
+        
+        if type(oldValue) == "table" then
+            if #oldValue ~= #newValue then return true end
+            for i = 1, #oldValue do
+                if oldValue[i] ~= newValue[i] then return true end
+            end
+            return false
+        end
+        
+        return oldValue ~= newValue
+    end
+    
+    function AutoConfig:StopMonitoring()
+        self.IsMonitoring = false
+    end
+    
+    function AutoConfig:ManualSave()
+        return self:SaveConfig()
+    end
+    
+    function AutoConfig:GetLastSaveTime()
+        return self.LastSaveTime
+    end
+end
+
+local Window = Fluent:CreateWindow({
+    Title = "#DJSTEST - FISH IT V.0.6 (Real-time Auto Save)",
+    SubTitle = "by dawid - Saves on every change",
+    TabWidth = 160,
+    Size = UDim2.fromOffset(580, 460),
+    Transparency = true,
+    Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.F
+})
+
+local Tabs = {
+    Main = Window:AddTab({ Title = "Main", Icon = "" }),
+    Settings = Window:AddTab({ Title = "Settings", Icon = "settings" })
+}
+
+local Options = Fluent.Options
+
+do
+    Fluent:Notify({
+        Title = "Real-time Auto Save",
+        Content = "Settings save automatically on every change!",
+        SubContent = "No waiting, instant save",
+        Duration = 5
+    })
+
+    Tabs.Main:AddParagraph({
+        Title = "Real-time Auto Save",
+        Content = "✅ Instant save on every change\n✅ No waiting periods\n✅ Auto loads on startup"
+    })
+    
+    -- Example UI elements that will be auto-saved
+    Tabs.Main:AddToggle("AutoFish", {
+        Title = "Auto Fish",
+        Description = "Enable automatic fishing",
+        Default = false
+    })
+    
+    Tabs.Main:AddToggle("AutoSell", {
+        Title = "Auto Sell",
+        Description = "Automatically sell caught fish",
+        Default = false
+    })
+    
+    Tabs.Main:AddSlider("FishingSpeed", {
+        Title = "Fishing Speed",
+        Description = "Adjust fishing speed multiplier",
+        Default = 1,
+        Min = 0.5,
+        Max = 5,
+        Rounding = 1
+    })
+    
+    Tabs.Main:AddDropdown("FishingLocation", {
+        Title = "Fishing Location",
+        Description = "Select fishing location",
+        Values = {"Ocean", "Lake", "River", "Pond"},
+        Multi = false,
+        Default = 1,
+    })
+    
+    Tabs.Main:AddInput("PlayerName", {
+        Title = "Player Name",
+        Description = "Enter your preferred name",
+        Default = "",
+        Placeholder = "Enter name here...",
+    })
+    
+    Tabs.Main:AddButton({
+        Title = "Save Settings Now",
+        Description = "Manually save current settings",
+        Callback = function()
+            local success, msg = AutoConfig:ManualSave()
+            Fluent:Notify({
+                Title = success and "Success" or "Error",
+                Content = msg,
+                Duration = 3
+            })
+        end
+    })
+end
+
+-- Settings tab with status info
+Tabs.Settings:AddSection("Auto Save Status")
+
+Tabs.Settings:AddParagraph({
+    Title = "System Information",
+    Content = "• Real-time auto save system\n• Saves instantly on every change\n• No SaveManager dependency\n• Config file: auto_settings.json"
+})
+
+local StatusParagraph = Tabs.Settings:AddParagraph({
+    Title = "Status",
+    Content = "Initializing..."
+})
+
+-- Status updater
+spawn(function()
+    while true do
+        wait(1)
+        local lastSave = AutoConfig:GetLastSaveTime()
+        if lastSave > 0 then
+            local timeSince = math.floor(tick() - lastSave)
+            StatusParagraph:SetDesc(string.format("Last save: %d seconds ago\nMonitoring: %s", 
+                timeSince, 
+                AutoConfig.IsMonitoring and "Active" or "Inactive"
+            ))
+        else
+            StatusParagraph:SetDesc("Waiting for changes to save...")
+        end
+    end
+end)
+
+-- Initialize the system
+Window:SelectTab(1)
+AutoConfig:Initialize(Fluent)
