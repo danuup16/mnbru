@@ -3110,53 +3110,6 @@ Components.Window = (function()
 		end
 
 
-		local SearchFrame = New("Frame", {
-			Size = UDim2.new(1, 0, 0, 35),
-			Position = UDim2.new(0, 0, 0, 0),
-			BackgroundTransparency = 0.9,
-			ZIndex = 10,
-			ThemeTag = {
-				BackgroundColor3 = "Element",
-			},
-		}, {
-			New("UICorner", {
-				CornerRadius = UDim.new(0, 6),
-			}),
-			New("UIStroke", {
-				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Transparency = 0.8,
-				Thickness = 1,
-				ThemeTag = {
-					Color = "ElementBorder",
-				},
-			}),
-		})
-
-		local SearchTextbox = Components.Textbox(SearchFrame, true)
-		SearchTextbox.Frame.Size = UDim2.new(1, -50, 1, -8)
-		SearchTextbox.Frame.Position = UDim2.new(0, 8, 0, 4)
-		SearchTextbox.Input.PlaceholderText = "Search..."
-		SearchTextbox.Input.Text = ""
-
-
-
-
-
-
-
-
-		local SearchIcon = New("ImageLabel", {
-			Size = UDim2.fromOffset(18, 18),
-			Position = UDim2.new(1, -25, 0.5, 0),
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			BackgroundTransparency = 1,
-			Image = "rbxassetid://10734943674",
-			Parent = SearchFrame,
-			ThemeTag = {
-				ImageColor3 = "SubText",
-			},
-		})
-
 
 		Creator.AddSignal(SearchTextbox.Input:GetPropertyChangedSignal("Text"), function()
 			local searchText = SearchTextbox.Input.Text
