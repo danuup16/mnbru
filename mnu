@@ -2980,7 +2980,7 @@ Components.TitleBar = (function()
 		TitleBar.CloseButton = BarButton(Components.Assets.Close, UDim2.new(1, -4, 0, 4), TitleBar.Frame, function()
 			Library.Window:Dialog({
 				Title = "Close",
-				Content = "Are you sure you want to unload the interface?",
+				Content = "Close?",
 				Buttons = {
 					{
 						Title = "Yes",
