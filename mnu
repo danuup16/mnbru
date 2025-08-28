@@ -6005,12 +6005,15 @@ else
 	Fluent = Library
 end
 
--- Replace the MinimizeButton creation section (around line 4950) with this:
+local Dragging, DragInput, MousePos, StartPos = false
+local isDragging = false
 
+-- MinimizeButton creation dengan struktur yang sudah diperbaiki
 local MinimizeButton = New("TextButton", {
 	BackgroundTransparency = 1,
 	Size = UDim2.new(1, 0, 1, 0),
-	BorderSizePixel = 0
+	BorderSizePixel = 0,
+	Text = ""
 }, {
 	New("UIPadding", {
 		PaddingBottom = UDim.new(0, 2),
@@ -6018,7 +6021,6 @@ local MinimizeButton = New("TextButton", {
 		PaddingRight = UDim.new(0, 2),
 		PaddingTop = UDim.new(0, 2),
 	}),
-	-- Replace the single ImageLabel with the custom structure
 	New("Frame", {
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 1,
@@ -6026,7 +6028,7 @@ local MinimizeButton = New("TextButton", {
 		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 1, 0),
 	}, {
-		New("ImageButton", {
+		New("ImageLabel", {
 			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 			BackgroundTransparency = 1,
 			BorderColor3 = Color3.fromRGB(0, 0, 0),
@@ -6045,8 +6047,9 @@ local MinimizeButton = New("TextButton", {
 		})
 	})
 })
-local Minimizer
 
+-- Minimizer creation 
+local Minimizer
 if Mobile then
 	Minimizer = New("Frame", {
 		Parent = GUI,
@@ -6091,6 +6094,29 @@ else
 		})
 	})
 end
+Creator.AddSignal(MinimizeButton.MouseButton1Click, function()
+	print("[DEBUG] MouseButton1Click triggered")
+	print("[DEBUG] isDragging state:", isDragging)
+	if not isDragging then
+		print("[DEBUG] Calling Library.Window:Minimize()")
+		Library.Window:Minimize()
+	else
+		print("[DEBUG] Click blocked because isDragging = true")
+	end
+end)
+Creator.AddSignal(MinimizeButton.MouseButton1Up, function()
+	print("[DEBUG] MouseButton1Up on MinimizeButton")
+end)
+Creator.AddSignal(MinimizeButton.Activated, function()
+	print("[DEBUG] Activated event triggered")
+	print("[DEBUG] isDragging state:", isDragging)
+	if not isDragging then
+		print("[DEBUG] Calling Library.Window:Minimize() from Activated")
+		Library.Window:Minimize()
+	else
+		print("[DEBUG] Activated blocked because isDragging = true")
+	end
+end)
 
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
 	if
@@ -6098,16 +6124,21 @@ Creator.AddSignal(Minimizer.InputBegan, function(Input)
 		or Input.UserInputType == Enum.UserInputType.Touch
 	then
 		Dragging = true
+		isDragging = false -- Reset drag state
 		MousePos = Input.Position
 		StartPos = Minimizer.Position
 
 		Input.Changed:Connect(function()
 			if Input.UserInputState == Enum.UserInputState.End then
 				Dragging = false
+				-- Reset isDragging after a short delay to allow click events
+				task.wait(0.1)
+				isDragging = false
 			end
 		end)
 	end
 end)
+
 
 
 
@@ -6130,12 +6161,19 @@ end)
 
 Creator.AddSignal(UserInputService.InputChanged, function(Input)
 	if Input == DragInput and Dragging then
+		-- Mark as dragging if there's actual movement
+		local deltaMovement = (Input.Position - MousePos).Magnitude
+		if deltaMovement > 3 then
+			isDragging = true
+		end
+		
 		local GuiInset = game:GetService("GuiService"):GetGuiInset()
 		local Delta = Input.Position - MousePos
 		local ViewportSize = workspace.Camera.ViewportSize
 		local CurrentX = StartPos.X.Scale + (Delta.X/ViewportSize.X)
 		local CurrentY = StartPos.Y.Scale + (Delta.Y/ViewportSize.Y)
 
+		-- Boundary checking
 		if CurrentX<0 or CurrentX > (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X then
 			if CurrentX < 0 then
 				CurrentX = 0
@@ -6152,9 +6190,11 @@ Creator.AddSignal(UserInputService.InputChanged, function(Input)
 			end
 		end
 
+		-- Update position
 		Minimizer.Position = UDim2.fromScale(CurrentX, CurrentY)
 	end
 end)
+
 
 AddSignal(MinimizeButton.MouseButton1Click, function()
 	Library.Window:Minimize()
