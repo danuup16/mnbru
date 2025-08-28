@@ -6096,10 +6096,15 @@ else
 end
 
 Creator.AddSignal(MinimizeButton.MouseButton1Click, function()
+	print("[DEBUG] Click detected, isDragMovement:", isDragMovement)
 	if not isDragMovement then
+		print("[DEBUG] Opening menu")
 		Library.Window:Minimize()
+	else
+		print("[DEBUG] Click blocked due to drag movement")
 	end
 end)
+
 Creator.AddSignal(MinimizeButton.MouseButton1Down, function()
 	print("[DEBUG] MouseButton1Down on MinimizeButton")
 end)
@@ -6118,19 +6123,28 @@ Creator.AddSignal(MinimizeButton.Activated, function()
 end)
 
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
-	if
-		Input.UserInputType == Enum.UserInputType.MouseButton1
-		or Input.UserInputType == Enum.UserInputType.Touch
-	then
-		Dragging = true
+	if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
+		-- Quick click detection
+		local clickStart = tick()
 		isDragMovement = false
+		Dragging = true
 		MousePos = Input.Position
 		StartPos = Minimizer.Position
 
 		Input.Changed:Connect(function()
 			if Input.UserInputState == Enum.UserInputState.End then
+				local clickDuration = tick() - clickStart
+				print("[DEBUG] Input ended, duration:", clickDuration, "isDragMovement:", isDragMovement)
+				
 				Dragging = false
-				-- Reset drag movement after short delay
+				
+				-- If it was a quick click without movement, trigger minimize
+				if clickDuration < 0.2 and not isDragMovement then
+					print("[DEBUG] Quick click detected, opening menu")
+					Library.Window:Minimize()
+				end
+				
+				-- Reset after delay
 				task.spawn(function()
 					task.wait(0.05)
 					isDragMovement = false
@@ -6139,6 +6153,7 @@ Creator.AddSignal(Minimizer.InputBegan, function(Input)
 		end)
 	end
 end)
+
 
 Creator.AddSignal(MinimizeButton.InputBegan, function(Input)
 	if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
@@ -6175,7 +6190,6 @@ Creator.AddSignal(Minimizer.InputChanged, function(Input)
 		DragInput = Input
 	end
 end)
-
 Creator.AddSignal(UserInputService.InputChanged, function(Input)
 	if Input == DragInput and Dragging then
 		local Delta = Input.Position - MousePos
