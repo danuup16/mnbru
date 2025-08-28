@@ -6005,6 +6005,8 @@ else
 	Fluent = Library
 end
 
+-- Replace the MinimizeButton creation section (around line 4950) with this:
+
 local MinimizeButton = New("TextButton", {
 	BackgroundTransparency = 1,
 	Size = UDim2.new(1, 0, 1, 0),
@@ -6016,18 +6018,33 @@ local MinimizeButton = New("TextButton", {
 		PaddingRight = UDim.new(0, 2),
 		PaddingTop = UDim.new(0, 2),
 	}),
-	New("ImageLabel", {
-		Image = Mobile and (Button_Icon ~= "" and Button_Icon or "rbxassetid://10734897102") or "rbxassetid://10734897102",
-		Size = UDim2.new(1, 0, 1, 0),
+	-- Replace the single ImageLabel with the custom structure
+	New("Frame", {
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 1,
+		BorderColor3 = Color3.fromRGB(0, 0, 0),
+		BorderSizePixel = 0,
+		Size = UDim2.new(1, 0, 1, 0),
 	}, {
+		New("ImageButton", {
+			BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+			BackgroundTransparency = 1,
+			BorderColor3 = Color3.fromRGB(0, 0, 0),
+			BorderSizePixel = 0,
+			Size = UDim2.new(1, 0, 1, 0),
+			Image = Mobile and (Button_Icon ~= "" and Button_Icon or "rbxassetid://10734897102") or "rbxassetid://10734897102",
+		}, {
+			New("UIAspectRatioConstraint", {
+				AspectRatio = 1,
+				AspectType = Enum.AspectType.FitWithinMaxSize,
+			})
+		}),
 		New("UIAspectRatioConstraint", {
 			AspectRatio = 1,
 			AspectType = Enum.AspectType.FitWithinMaxSize,
 		})
 	})
 })
-
 local Minimizer
 
 if Mobile then
