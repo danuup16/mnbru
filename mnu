@@ -6006,7 +6006,7 @@ else
 end
 
 local Dragging, DragInput, MousePos, StartPos = false
-local isDragging = false
+local isDragMovement = false
 
 -- MinimizeButton creation dengan struktur yang sudah diperbaiki
 local MinimizeButton = New("TextButton", {
@@ -6096,13 +6096,8 @@ else
 end
 
 Creator.AddSignal(MinimizeButton.MouseButton1Click, function()
-	print("[DEBUG] MouseButton1Click triggered")
-	print("[DEBUG] isDragging state:", isDragging)
-	if not isDragging then
-		print("[DEBUG] Calling Library.Window:Minimize()")
+	if not isDragMovement then
 		Library.Window:Minimize()
-	else
-		print("[DEBUG] Click blocked because isDragging = true")
 	end
 end)
 Creator.AddSignal(MinimizeButton.MouseButton1Down, function()
@@ -6123,25 +6118,28 @@ Creator.AddSignal(MinimizeButton.Activated, function()
 end)
 
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
-	if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-		print("[DEBUG] Minimizer InputBegan - Starting drag")
+	if
+		Input.UserInputType == Enum.UserInputType.MouseButton1
+		or Input.UserInputType == Enum.UserInputType.Touch
+	then
 		Dragging = true
-		isDragging = false
+		isDragMovement = false
 		MousePos = Input.Position
 		StartPos = Minimizer.Position
 
 		Input.Changed:Connect(function()
 			if Input.UserInputState == Enum.UserInputState.End then
-				print("[DEBUG] Minimizer InputEnded")
 				Dragging = false
+				-- Reset drag movement after short delay
 				task.spawn(function()
-					task.wait(0.1)
-					isDragging = false
+					task.wait(0.05)
+					isDragMovement = false
 				end)
 			end
 		end)
 	end
 end)
+
 Creator.AddSignal(MinimizeButton.InputBegan, function(Input)
 	if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
 		print("[DEBUG] MinimizeButton InputBegan - Starting drag from logo")
@@ -6170,41 +6168,46 @@ Creator.AddSignal(MinimizeButton.InputChanged, function(Input)
 end)
 
 Creator.AddSignal(Minimizer.InputChanged, function(Input)
-	if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
-		print("[DEBUG] Setting DragInput from Minimizer")
+	if
+		Input.UserInputType == Enum.UserInputType.MouseMovement
+		or Input.UserInputType == Enum.UserInputType.Touch
+	then
 		DragInput = Input
 	end
 end)
 
-
 Creator.AddSignal(UserInputService.InputChanged, function(Input)
 	if Input == DragInput and Dragging then
-		local deltaMovement = (Input.Position - MousePos).Magnitude
-		print("[DEBUG] Dragging with movement:", deltaMovement)
+		local Delta = Input.Position - MousePos
+		local movement = Delta.Magnitude
 		
-		if deltaMovement > 3 and not isDragging then
-			print("[DEBUG] Setting isDragging = true")
-			isDragging = true
-		end
-		
-		if deltaMovement > 3 then
+		-- Only start actual dragging if moved more than 5 pixels
+		if movement > 5 then
+			isDragMovement = true
+			
 			local GuiInset = game:GetService("GuiService"):GetGuiInset()
-			local Delta = Input.Position - MousePos
 			local ViewportSize = workspace.Camera.ViewportSize
 			local CurrentX = StartPos.X.Scale + (Delta.X/ViewportSize.X)
 			local CurrentY = StartPos.Y.Scale + (Delta.Y/ViewportSize.Y)
 
 			-- Boundary checking
-			if CurrentX < 0 then CurrentX = 0 end
-			if CurrentX > (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X then
-				CurrentX = (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X
-			end
-			if CurrentY < 0 then CurrentY = 0 end
-			if CurrentY > ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y) then
-				CurrentY = ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y)
+			if CurrentX<0 or CurrentX > (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X then
+				if CurrentX < 0 then
+					CurrentX = 0
+				else
+					CurrentX = (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X
+				end
 			end
 
-			print("[DEBUG] Moving to position:", CurrentX, CurrentY)
+			if CurrentY < 0 or CurrentY > ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y) then
+				if CurrentY < 0 then
+					CurrentY = 0
+				else
+					CurrentY = ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y)
+				end
+			end
+
+			-- Update posisi Minimizer
 			Minimizer.Position = UDim2.fromScale(CurrentX, CurrentY)
 		end
 	end
