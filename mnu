@@ -6008,7 +6008,7 @@ local MinimizeButton = New("TextButton", {
 	}),
 	New("ImageLabel", {
 		Image = Mobile and (Button_Icon ~= "" and Button_Icon or "rbxassetid://10734897102") or "rbxassetid://10734897102",
-		Size = UDim2.new(0, 7, 0, 7),
+		Size = UDim2.new(1, 0, 1, 0),
 		BackgroundTransparency = 1,
 	}, {
 		New("UIAspectRatioConstraint", {
@@ -6131,6 +6131,45 @@ end)
 
 AddSignal(MinimizeButton.MouseButton1Click, function()
 	Library.Window:Minimize()
+end)
+-- Pastikan Button_Icon sudah berupa Instance (misal: ImageButton/TextButton)
+local dragging = false
+local dragInput, dragStart, startPos
+
+local function update(input)
+	local delta = input.Position - dragStart
+	Button_Icon.Position = UDim2.new(
+		startPos.X.Scale,
+		startPos.X.Offset + delta.X,
+		startPos.Y.Scale,
+		startPos.Y.Offset + delta.Y
+	)
+end
+
+Button_Icon.InputBegan:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+		dragging = true
+		dragStart = input.Position
+		startPos = Button_Icon.Position
+
+		input.Changed:Connect(function()
+			if input.UserInputState == Enum.UserInputState.End then
+				dragging = false
+			end
+		end)
+	end
+end)
+
+Button_Icon.InputChanged:Connect(function(input)
+	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
+		dragInput = input
+	end
+end)
+
+UserInputService.InputChanged:Connect(function(input)
+	if input == dragInput and dragging then
+		update(input)
+	end
 end)
 
 task.wait(0.01)
