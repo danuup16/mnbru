@@ -6112,47 +6112,35 @@ Creator.AddSignal(MinimizeButton.MouseButton1Up, function()
 	print("[DEBUG] MouseButton1Up on MinimizeButton")
 end)
 Creator.AddSignal(MinimizeButton.Activated, function()
-	print("[DEBUG] Activated event triggered")
-	print("[DEBUG] isDragging state:", isDragging)
-	if not isDragging then
-		print("[DEBUG] Calling Library.Window:Minimize() from Activated")
-		Library.Window:Minimize()
-	else
-		print("[DEBUG] Activated blocked because isDragging = true")
+	print("[DEBUG] Activated triggered, isDragMovement:", isDragMovement)
+	-- Only trigger if we're not in the middle of dragging
+	if not isDragMovement then
+		print("[DEBUG] Calling minimize")
+		pcall(function()
+			Library.Window:Minimize()
+		end)
 	end
 end)
-
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
 	if Input.UserInputType == Enum.UserInputType.MouseButton1 or Input.UserInputType == Enum.UserInputType.Touch then
-		-- Quick click detection
-		local clickStart = tick()
-		isDragMovement = false
+		print("[DEBUG] Drag started from Minimizer")
 		Dragging = true
+		isDragMovement = false -- Reset at start
 		MousePos = Input.Position
 		StartPos = Minimizer.Position
 
 		Input.Changed:Connect(function()
 			if Input.UserInputState == Enum.UserInputState.End then
-				local clickDuration = tick() - clickStart
-				print("[DEBUG] Input ended, duration:", clickDuration, "isDragMovement:", isDragMovement)
-				
+				print("[DEBUG] Drag ended, isDragMovement was:", isDragMovement)
 				Dragging = false
-				
-				-- If it was a quick click without movement, trigger minimize
-				if clickDuration < 0.2 and not isDragMovement then
-					print("[DEBUG] Quick click detected, opening menu")
-					Library.Window:Minimize()
-				end
-				
-				-- Reset after delay
-				task.spawn(function()
-					task.wait(0.05)
-					isDragMovement = false
-				end)
+				-- Quick reset for next interaction
+				task.wait(0.02)
+				isDragMovement = false
 			end
 		end)
 	end
 end)
+
 
 
 Creator.AddSignal(MinimizeButton.InputBegan, function(Input)
@@ -6183,10 +6171,7 @@ Creator.AddSignal(MinimizeButton.InputChanged, function(Input)
 end)
 
 Creator.AddSignal(Minimizer.InputChanged, function(Input)
-	if
-		Input.UserInputType == Enum.UserInputType.MouseMovement
-		or Input.UserInputType == Enum.UserInputType.Touch
-	then
+	if Input.UserInputType == Enum.UserInputType.MouseMovement or Input.UserInputType == Enum.UserInputType.Touch then
 		DragInput = Input
 	end
 end)
@@ -6195,8 +6180,8 @@ Creator.AddSignal(UserInputService.InputChanged, function(Input)
 		local Delta = Input.Position - MousePos
 		local movement = Delta.Magnitude
 		
-		-- Only start actual dragging if moved more than 5 pixels
-		if movement > 5 then
+		-- Mark as drag movement if moved more than 8 pixels (increased threshold)
+		if movement > 8 then
 			isDragMovement = true
 			
 			local GuiInset = game:GetService("GuiService"):GetGuiInset()
@@ -6205,24 +6190,12 @@ Creator.AddSignal(UserInputService.InputChanged, function(Input)
 			local CurrentY = StartPos.Y.Scale + (Delta.Y/ViewportSize.Y)
 
 			-- Boundary checking
-			if CurrentX<0 or CurrentX > (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X then
-				if CurrentX < 0 then
-					CurrentX = 0
-				else
-					CurrentX = (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X
-				end
-			end
+			CurrentX = math.max(0, math.min(CurrentX, (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X))
+			CurrentY = math.max(0, math.min(CurrentY, (ViewportSize.Y - Minimizer.AbsoluteSize.Y)/ViewportSize.Y))
 
-			if CurrentY < 0 or CurrentY > ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y) then
-				if CurrentY < 0 then
-					CurrentY = 0
-				else
-					CurrentY = ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y)
-				end
-			end
-
-			-- Update posisi Minimizer
+			-- Update position
 			Minimizer.Position = UDim2.fromScale(CurrentX, CurrentY)
+			print("[DEBUG] Dragging to:", CurrentX, CurrentY)
 		end
 	end
 end)
