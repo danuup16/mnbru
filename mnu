@@ -5391,6 +5391,7 @@ local Icons = {
 	["lucide-message-circle-question"] = "rbxassetid://16970049192",
 	["lucide-webhook"] = "rbxassetid://17320556264",
 	["lucide-fish"] = "rbxassetid://16898670775",
+	["lucide-djs"] = "rbxassetid://125181034874810",
 	["lucide-dumbbell"] = "rbxassetid://18273453053"
 }
 function Library:GetIcon(Name)
