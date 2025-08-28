@@ -1,4 +1,5 @@
 local Show_Button = true
+local Button_Icon = "rbxassetid://125181034874810"
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
 local LocalPlayer = game:GetService("Players").LocalPlayer
@@ -10,52 +11,6 @@ local Mouse = LocalPlayer:GetMouse()
 local httpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
--- ========================
--- BUAT BUTTON ICON
--- ========================
-local Button_Icon = Instance.new("ImageButton")
-Button_Icon.Name = "Button_Icon"
-Button_Icon.Size = UDim2.fromOffset(50, 50) -- ukuran tombol
-Button_Icon.Position = UDim2.new(0, 100, 0, 100) -- posisi awal
-Button_Icon.Image = "rbxassetid://125181034874810" -- asset yang kamu pakai
-Button_Icon.BackgroundTransparency = 1
-Button_Icon.Parent = GUI -- masuk ke ScreenGui
-
--- ========================
--- SISTEM DRAG
--- ========================
-local dragging = false
-local dragStart, startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    Button_Icon.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
-end
-
-Button_Icon.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = Button_Icon.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-Button_Icon.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-        update(input)
-    end
-end)
 
 local Mobile
 if RunService:IsStudio() then
@@ -810,38 +765,6 @@ local GUI = New("ScreenGui", {
 })
 Library.GUI = GUI
 ProtectGui(GUI)
-local dragging = false
-local dragStart, startPos
-
-local function update(input)
-    local delta = input.Position - dragStart
-    Button_Icon.Position = UDim2.new(
-        startPos.X.Scale,
-        startPos.X.Offset + delta.X,
-        startPos.Y.Scale,
-        startPos.Y.Offset + delta.Y
-    )
-end
-
-Button_Icon.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragging = true
-        dragStart = input.Position
-        startPos = Button_Icon.Position
-
-        input.Changed:Connect(function()
-            if input.UserInputState == Enum.UserInputState.End then
-                dragging = false
-            end
-        end)
-    end
-end)
-
-Button_Icon.InputChanged:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseMovement and dragging then
-        update(input)
-    end
-end)
 
 function Library:SafeCallback(Function, ...)
 	if not Function then
