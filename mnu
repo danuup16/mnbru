@@ -6006,9 +6006,7 @@ else
 end
 -- Variable untuk drag functionality (letakkan di bagian atas setelah deklarasi variabel lain)
 local Dragging, DragInput, MousePos, StartPos = false
-local DragStartTime = 0
-local DragThreshold = 5 -- pixels
-local ClickTimeThreshold = 0.2 -- seconds
+local isDragging = false
 
 -- MinimizeButton creation dengan struktur yang sudah diperbaiki
 local MinimizeButton = New("TextButton", {
@@ -6050,7 +6048,7 @@ local MinimizeButton = New("TextButton", {
 	})
 })
 
--- Minimizer creation (sama seperti sebelumnya)
+-- Minimizer creation 
 local Minimizer
 if Mobile then
 	Minimizer = New("Frame", {
@@ -6097,74 +6095,39 @@ else
 	})
 end
 
--- ========== DRAG FUNCTIONALITY START ==========
+-- ========== CLICK FUNCTIONALITY FIRST ==========
 
--- Event untuk mulai drag dari Minimizer frame
+-- Primary click event untuk minimize
+Creator.AddSignal(MinimizeButton.MouseButton1Click, function()
+	if not isDragging then
+		Library.Window:Minimize()
+	end
+end)
+
+-- ========== DRAG FUNCTIONALITY ==========
+
+-- Drag from anywhere on the Minimizer
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
 	if
 		Input.UserInputType == Enum.UserInputType.MouseButton1
 		or Input.UserInputType == Enum.UserInputType.Touch
 	then
-		DragStartTime = tick()
+		Dragging = true
+		isDragging = false -- Reset drag state
 		MousePos = Input.Position
 		StartPos = Minimizer.Position
-		Dragging = false -- Don't start dragging immediately
 
 		Input.Changed:Connect(function()
 			if Input.UserInputState == Enum.UserInputState.End then
-				local dragTime = tick() - DragStartTime
-				local dragDistance = (Input.Position - MousePos).Magnitude
-				
-				-- If it was a quick click with minimal movement, treat as click
-				if dragTime < ClickTimeThreshold and dragDistance < DragThreshold then
-					-- This was a click, not a drag - do nothing here as click event will handle it
-				end
-				
 				Dragging = false
+				-- Reset isDragging after a short delay to allow click events
+				task.wait(0.1)
+				isDragging = false
 			end
 		end)
 	end
 end)
 
--- Event untuk mulai drag langsung dari MinimizeButton (logo)
-Creator.AddSignal(MinimizeButton.InputBegan, function(Input)
-	if
-		Input.UserInputType == Enum.UserInputType.MouseButton1
-		or Input.UserInputType == Enum.UserInputType.Touch
-	then
-		DragStartTime = tick()
-		MousePos = Input.Position
-		StartPos = Minimizer.Position
-		Dragging = false -- Don't start dragging immediately
-
-		Input.Changed:Connect(function()
-			if Input.UserInputState == Enum.UserInputState.End then
-				local dragTime = tick() - DragStartTime
-				local dragDistance = (Input.Position - MousePos).Magnitude
-				
-				-- If it was a quick click with minimal movement, treat as click
-				if dragTime < ClickTimeThreshold and dragDistance < DragThreshold then
-					-- This was a click, not a drag - let the click event handle it
-					return
-				end
-				
-				Dragging = false
-			end
-		end)
-	end
-end)
-
--- Track mouse movement pada MinimizeButton
-Creator.AddSignal(MinimizeButton.InputChanged, function(Input)
-	if
-		Input.UserInputType == Enum.UserInputType.MouseMovement
-		or Input.UserInputType == Enum.UserInputType.Touch
-	then
-		DragInput = Input
-	end
-end)
-
--- Track mouse movement pada Minimizer
 Creator.AddSignal(Minimizer.InputChanged, function(Input)
 	if
 		Input.UserInputType == Enum.UserInputType.MouseMovement
@@ -6174,68 +6137,44 @@ Creator.AddSignal(Minimizer.InputChanged, function(Input)
 	end
 end)
 
--- Main drag logic - ini yang menggerakkan logo
+-- Main drag logic
 Creator.AddSignal(UserInputService.InputChanged, function(Input)
-	if Input == DragInput then
-		-- Check if we should start dragging (movement threshold exceeded)
-		if not Dragging and MousePos then
-			local dragDistance = (Input.Position - MousePos).Magnitude
-			local dragTime = tick() - DragStartTime
-			
-			-- Start dragging if moved enough or held long enough
-			if dragDistance > DragThreshold or dragTime > ClickTimeThreshold then
-				Dragging = true
-			end
+	if Input == DragInput and Dragging then
+		-- Mark as dragging if there's actual movement
+		local deltaMovement = (Input.Position - MousePos).Magnitude
+		if deltaMovement > 3 then
+			isDragging = true
 		end
 		
-		-- Perform drag if we're in drag mode
-		if Dragging then
-			local GuiInset = game:GetService("GuiService"):GetGuiInset()
-			local Delta = Input.Position - MousePos
-			local ViewportSize = workspace.Camera.ViewportSize
-			local CurrentX = StartPos.X.Scale + (Delta.X/ViewportSize.X)
-			local CurrentY = StartPos.Y.Scale + (Delta.Y/ViewportSize.Y)
+		local GuiInset = game:GetService("GuiService"):GetGuiInset()
+		local Delta = Input.Position - MousePos
+		local ViewportSize = workspace.Camera.ViewportSize
+		local CurrentX = StartPos.X.Scale + (Delta.X/ViewportSize.X)
+		local CurrentY = StartPos.Y.Scale + (Delta.Y/ViewportSize.Y)
 
-			-- Boundary checking - mencegah logo keluar dari layar
-			if CurrentX<0 or CurrentX > (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X then
-				if CurrentX < 0 then
-					CurrentX = 0
-				else
-					CurrentX = (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X
-				end
+		-- Boundary checking
+		if CurrentX<0 or CurrentX > (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X then
+			if CurrentX < 0 then
+				CurrentX = 0
+			else
+				CurrentX = (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X
 			end
-
-			if CurrentY < 0 or CurrentY > ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y) then
-				if CurrentY < 0 then
-					CurrentY = 0
-				else
-					CurrentY = ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y)
-				end
-			end
-
-			-- Update posisi Minimizer (ini yang membuat logo bergerak)
-			Minimizer.Position = UDim2.fromScale(CurrentX, CurrentY)
 		end
+
+		if CurrentY < 0 or CurrentY > ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y) then
+			if CurrentY < 0 then
+				CurrentY = 0
+			else
+				CurrentY = ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y)
+			end
+		end
+
+		-- Update position
+		Minimizer.Position = UDim2.fromScale(CurrentX, CurrentY)
 	end
 end)
 
--- ========== DRAG FUNCTIONALITY END ==========
-
--- Click functionality untuk minimize (dengan improved logic)
-Creator.AddSignal(MinimizeButton.MouseButton1Click, function()
-	-- Only trigger minimize if we weren't dragging
-	if not Dragging then
-		Library.Window:Minimize()
-	end
-end)
-
--- Add backup click detection using Activated event
-Creator.AddSignal(MinimizeButton.Activated, function()
-	-- Only trigger minimize if we weren't dragging  
-	if not Dragging then
-		Library.Window:Minimize()
-	end
-end)
+task.wait(0.01)
 
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
 	if
