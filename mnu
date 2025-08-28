@@ -2442,7 +2442,7 @@ Components.Window = (function()
 		local SearchFrame = New("Frame", {
 			Size = UDim2.new(1, 0, 0, 35),
 			Position = UDim2.new(0, 0, 0, 0),
-			BackgroundTransparency = 1,
+			BackgroundTransparency = 0.9,
 			ZIndex = 10,
 			ThemeTag = {
 				BackgroundColor3 = "Element",
@@ -2453,8 +2453,8 @@ Components.Window = (function()
 			}),
 			New("UIStroke", {
 				ApplyStrokeMode = Enum.ApplyStrokeMode.Border,
-				Transparency = 1,
-				Thickness = 0,
+				Transparency = 0.8,
+				Thickness = 1,
 				ThemeTag = {
 					Color = "ElementBorder",
 				},
@@ -2466,12 +2466,14 @@ Components.Window = (function()
 		SearchTextbox.Frame.Position = UDim2.new(0, 8, 0, 4)
 		SearchTextbox.Input.PlaceholderText = "Search..."
 		SearchTextbox.Input.Text = ""
+
+
 		local SearchIcon = New("ImageLabel", {
 			Size = UDim2.fromOffset(18, 18),
 			Position = UDim2.new(1, -25, 0.5, 0),
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			BackgroundTransparency = 1,
-			Image = "",
+			Image = "rbxassetid://10734943674",
 			Parent = SearchFrame,
 			ThemeTag = {
 				ImageColor3 = "SubText",
@@ -2479,23 +2481,23 @@ Components.Window = (function()
 		})
 
 
-		-- Creator.AddSignal(SearchTextbox.Input:GetPropertyChangedSignal("Text"), function()
-		-- 	local searchText = SearchTextbox.Input.Text
-		-- 	UpdateElementVisibility(searchText)
-		-- end)
+		Creator.AddSignal(SearchTextbox.Input:GetPropertyChangedSignal("Text"), function()
+			local searchText = SearchTextbox.Input.Text
+			UpdateElementVisibility(searchText)
+		end)
 
 
-		-- Creator.AddSignal(SearchTextbox.Input.FocusLost, function(enterPressed)
-		-- end)
+		Creator.AddSignal(SearchTextbox.Input.FocusLost, function(enterPressed)
+		end)
 
-		-- Creator.AddSignal(UserInputService.InputBegan, function(input, gameProcessed)
-		-- 	if gameProcessed then return end
+		Creator.AddSignal(UserInputService.InputBegan, function(input, gameProcessed)
+			if gameProcessed then return end
 
-		-- 	if input.KeyCode == Enum.KeyCode.Escape and SearchTextbox.Input:IsFocused() then
-		-- 		SearchTextbox.Input.Text = ""
-		-- 		SearchTextbox.Input:ReleaseFocus()
-		-- 	end
-		-- end)
+			if input.KeyCode == Enum.KeyCode.Escape and SearchTextbox.Input:IsFocused() then
+				SearchTextbox.Input.Text = ""
+				SearchTextbox.Input:ReleaseFocus()
+			end
+		end)
 
 
 		Window.SearchElements = SearchElements
@@ -2520,7 +2522,7 @@ Components.Window = (function()
 			TextTransparency = 0,
 			FontFace = Font.new("rbxassetid://12187365364", Enum.FontWeight.SemiBold, Enum.FontStyle.Normal),
 			TextSize = 28,
-			TextXAlignment = "Left",
+			TextXAlignment = "Center",
 			TextYAlignment = "Center",
 			Size = UDim2.new(1, -16, 0, 28),
 			Position = UDim2.fromOffset(Window.TabWidth + 26, 56),
