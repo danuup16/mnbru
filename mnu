@@ -2466,6 +2466,14 @@ Components.Window = (function()
 		SearchTextbox.Frame.Position = UDim2.new(0, 8, 0, 4)
 		SearchTextbox.Input.PlaceholderText = "Search..."
 		SearchTextbox.Input.Text = ""
+
+
+
+
+
+
+
+
 		local SearchIcon = New("ImageLabel", {
 			Size = UDim2.fromOffset(18, 18),
 			Position = UDim2.new(1, -25, 0.5, 0),
@@ -6131,45 +6139,6 @@ end)
 
 AddSignal(MinimizeButton.MouseButton1Click, function()
 	Library.Window:Minimize()
-end)
--- Pastikan Button_Icon sudah berupa Instance (misal: ImageButton/TextButton)
-local dragging = false
-local dragInput, dragStart, startPos
-
-local function update(input)
-	local delta = input.Position - dragStart
-	Button_Icon.Position = UDim2.new(
-		startPos.X.Scale,
-		startPos.X.Offset + delta.X,
-		startPos.Y.Scale,
-		startPos.Y.Offset + delta.Y
-	)
-end
-
-Button_Icon.InputBegan:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-		dragging = true
-		dragStart = input.Position
-		startPos = Button_Icon.Position
-
-		input.Changed:Connect(function()
-			if input.UserInputState == Enum.UserInputState.End then
-				dragging = false
-			end
-		end)
-	end
-end)
-
-Button_Icon.InputChanged:Connect(function(input)
-	if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-		dragInput = input
-	end
-end)
-
-UserInputService.InputChanged:Connect(function(input)
-	if input == dragInput and dragging then
-		update(input)
-	end
 end)
 
 task.wait(0.01)
