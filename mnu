@@ -1,4 +1,4 @@
-local Show_Button = true
+local Show_Button = false
 local Button_Icon = "rbxassetid://125181034874810"
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
@@ -6053,7 +6053,7 @@ local Minimizer
 if Mobile then
 	Minimizer = New("Frame", {
 		Parent = GUI,
-		Size = UDim2.new(0.08, 1, 0.1642, 1),
+		Size = UDim2.new(0.06, 1, 0.12, 1),
 		Position = UDim2.new(0.45, 0, 0.025, 0),
 		BackgroundTransparency = 1,
 		ZIndex = 999999999,
@@ -6199,14 +6199,6 @@ Creator.AddSignal(UserInputService.InputChanged, function(Input)
 		end
 	end
 end)
-task.spawn(function()
-	task.wait(1)
-	print("[DEBUG] Library.Window exists:", Library.Window ~= nil)
-	if Library.Window then
-		print("[DEBUG] Library.Window.Minimize exists:", Library.Window.Minimize ~= nil)
-	end
-end)
-
 
 AddSignal(MinimizeButton.MouseButton1Click, function()
 	Library.Window:Minimize()
