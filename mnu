@@ -2461,10 +2461,11 @@ Components.Window = (function()
 			}),
 		})
 
-
-
-
-
+		local SearchTextbox = Components.Textbox(SearchFrame, true)
+		SearchTextbox.Frame.Size = UDim2.new(1, -50, 1, -8)
+		SearchTextbox.Frame.Position = UDim2.new(0, 8, 0, 4)
+		SearchTextbox.Input.PlaceholderText = "Search..."
+		SearchTextbox.Input.Text = ""
 		local SearchIcon = New("ImageLabel", {
 			Size = UDim2.fromOffset(18, 18),
 			Position = UDim2.new(1, -25, 0.5, 0),
@@ -6007,7 +6008,7 @@ local MinimizeButton = New("TextButton", {
 	}),
 	New("ImageLabel", {
 		Image = Mobile and (Button_Icon ~= "" and Button_Icon or "rbxassetid://10734897102") or "rbxassetid://10734897102",
-		Size = UDim2.new(1, 0, 1, 0),
+		Size = UDim2.new(0, 5, 0, 5),
 		BackgroundTransparency = 1,
 	}, {
 		New("UIAspectRatioConstraint", {
