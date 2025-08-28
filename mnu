@@ -6004,13 +6004,15 @@ if getgenv then
 else
 	Fluent = Library
 end
--- Replace the MinimizeButton creation section (around line 4950) with this:
+-- Variable untuk drag functionality (letakkan di bagian atas setelah deklarasi variabel lain)
+local Dragging, DragInput, MousePos, StartPos = false
 
+-- MinimizeButton creation dengan struktur yang sudah diperbaiki
 local MinimizeButton = New("TextButton", {
 	BackgroundTransparency = 1,
 	Size = UDim2.new(1, 0, 1, 0),
 	BorderSizePixel = 0,
-	Text = "" -- Ensure no text is shown
+	Text = ""
 }, {
 	New("UIPadding", {
 		PaddingBottom = UDim.new(0, 2),
@@ -6018,7 +6020,6 @@ local MinimizeButton = New("TextButton", {
 		PaddingRight = UDim.new(0, 2),
 		PaddingTop = UDim.new(0, 2),
 	}),
-	-- Use ImageLabel instead of ImageButton to avoid event conflicts
 	New("Frame", {
 		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
 		BackgroundTransparency = 1,
@@ -6046,9 +6047,8 @@ local MinimizeButton = New("TextButton", {
 	})
 })
 
--- Also update the Minimizer creation to ensure proper structure:
+-- Minimizer creation (sama seperti sebelumnya)
 local Minimizer
-
 if Mobile then
 	Minimizer = New("Frame", {
 		Parent = GUI,
@@ -6093,6 +6093,102 @@ else
 		})
 	})
 end
+
+-- ========== DRAG FUNCTIONALITY START ==========
+
+-- Event untuk mulai drag dari Minimizer frame
+Creator.AddSignal(Minimizer.InputBegan, function(Input)
+	if
+		Input.UserInputType == Enum.UserInputType.MouseButton1
+		or Input.UserInputType == Enum.UserInputType.Touch
+	then
+		Dragging = true
+		MousePos = Input.Position
+		StartPos = Minimizer.Position
+
+		Input.Changed:Connect(function()
+			if Input.UserInputState == Enum.UserInputState.End then
+				Dragging = false
+			end
+		end)
+	end
+end)
+
+-- Event untuk mulai drag langsung dari MinimizeButton (logo)
+Creator.AddSignal(MinimizeButton.InputBegan, function(Input)
+	if
+		Input.UserInputType == Enum.UserInputType.MouseButton1
+		or Input.UserInputType == Enum.UserInputType.Touch
+	then
+		Dragging = true
+		MousePos = Input.Position
+		StartPos = Minimizer.Position
+
+		Input.Changed:Connect(function()
+			if Input.UserInputState == Enum.UserInputState.End then
+				Dragging = false
+			end
+		end)
+	end
+end)
+
+-- Track mouse movement pada MinimizeButton
+Creator.AddSignal(MinimizeButton.InputChanged, function(Input)
+	if
+		Input.UserInputType == Enum.UserInputType.MouseMovement
+		or Input.UserInputType == Enum.UserInputType.Touch
+	then
+		DragInput = Input
+	end
+end)
+
+-- Track mouse movement pada Minimizer
+Creator.AddSignal(Minimizer.InputChanged, function(Input)
+	if
+		Input.UserInputType == Enum.UserInputType.MouseMovement
+		or Input.UserInputType == Enum.UserInputType.Touch
+	then
+		DragInput = Input
+	end
+end)
+
+-- Main drag logic - ini yang menggerakkan logo
+Creator.AddSignal(UserInputService.InputChanged, function(Input)
+	if Input == DragInput and Dragging then
+		local GuiInset = game:GetService("GuiService"):GetGuiInset()
+		local Delta = Input.Position - MousePos
+		local ViewportSize = workspace.Camera.ViewportSize
+		local CurrentX = StartPos.X.Scale + (Delta.X/ViewportSize.X)
+		local CurrentY = StartPos.Y.Scale + (Delta.Y/ViewportSize.Y)
+
+		-- Boundary checking - mencegah logo keluar dari layar
+		if CurrentX<0 or CurrentX > (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X then
+			if CurrentX < 0 then
+				CurrentX = 0
+			else
+				CurrentX = (ViewportSize.X - Minimizer.AbsoluteSize.X)/ViewportSize.X
+			end
+		end
+
+		if CurrentY < 0 or CurrentY > ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y) then
+			if CurrentY < 0 then
+				CurrentY = 0
+			else
+				CurrentY = ((ViewportSize.Y + GuiInset.Y) - Minimizer.AbsoluteSize.Y)/(ViewportSize.Y + GuiInset.Y)
+			end
+		end
+
+		-- Update posisi Minimizer (ini yang membuat logo bergerak)
+		Minimizer.Position = UDim2.fromScale(CurrentX, CurrentY)
+	end
+end)
+
+-- ========== DRAG FUNCTIONALITY END ==========
+
+-- Click functionality untuk minimize (tetap berfungsi)
+Creator.AddSignal(MinimizeButton.MouseButton1Click, function()
+	Library.Window:Minimize()
+end)
 
 Creator.AddSignal(Minimizer.InputBegan, function(Input)
 	if
