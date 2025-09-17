@@ -1,4 +1,4 @@
-local Show_Button = true
+local Show_Button = false
 local Button_Icon = "rbxassetid://125181034874810"
 local Lighting = game:GetService("Lighting")
 local RunService = game:GetService("RunService")
